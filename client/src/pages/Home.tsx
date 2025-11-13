@@ -85,7 +85,88 @@ export default function Home() {
     return value.toExponential(2);
   };
 
-  const isDangerous = wavelength < 1e-6;
+  const getSafetyInfo = (wl: number) => {
+    if (wl >= 1e-1) {
+      return {
+        level: 'safe',
+        type: 'Long Radio Waves',
+        harmLevel: 'Minimal Risk',
+        reason: 'Very low energy, long wavelengths cannot penetrate biological tissue',
+        effects: 'No known harmful effects at typical exposure levels',
+        protection: 'No special precautions needed for normal environmental exposure'
+      };
+    }
+    if (wl >= 1e-3) {
+      return {
+        level: 'safe',
+        type: 'AM/FM Radio Waves',
+        harmLevel: 'Low Risk',
+        reason: 'Low energy radiation, mostly passes through or reflects off the body',
+        effects: 'Potential interference with medical devices near high-power transmitters',
+        protection: 'Maintain safe distance from broadcast towers and high-power antennas'
+      };
+    }
+    if (wl >= 1e-6) {
+      return {
+        level: 'caution',
+        type: 'Microwave Radiation',
+        harmLevel: 'Moderate Risk',
+        reason: 'Can cause dielectric heating of water molecules in biological tissue',
+        effects: 'Tissue heating, potential burns from high-intensity exposure; can heat internal organs without surface sensation',
+        protection: 'Never operate microwave ovens with damaged doors; maintain distance from radar and communication towers; limit prolonged cell phone use'
+      };
+    }
+    if (wl >= 7e-7) {
+      return {
+        level: 'safe',
+        type: 'Infrared Radiation',
+        harmLevel: 'Low Risk',
+        reason: 'Absorbed by skin surface, felt as heat',
+        effects: 'Skin burns from prolonged high-intensity exposure; potential eye damage from lasers',
+        protection: 'Avoid prolonged exposure to intense IR sources; wear protective eyewear around IR lasers'
+      };
+    }
+    if (wl >= 4e-7) {
+      return {
+        level: 'safe',
+        type: 'Visible Light',
+        harmLevel: 'Low Risk',
+        reason: 'Natural exposure essential for vision and health',
+        effects: 'High-intensity sources (lasers, welding) can damage retina; prolonged bright light causes eye strain',
+        protection: 'Never look directly at lasers or the sun; wear welding masks during welding; use sunglasses in bright conditions'
+      };
+    }
+    if (wl >= 1e-8) {
+      return {
+        level: 'danger',
+        type: 'Ultraviolet Radiation',
+        harmLevel: 'High Risk',
+        reason: 'Photons carry enough energy to damage DNA and break chemical bonds',
+        effects: 'Skin cancer (melanoma, basal cell carcinoma); premature skin aging; cataracts and eye damage; immune system suppression',
+        protection: 'Apply broad-spectrum SPF 30+ sunscreen; wear UV-blocking sunglasses; limit sun exposure 10am-4pm; wear protective clothing; avoid tanning beds'
+      };
+    }
+    if (wl >= 1e-11) {
+      return {
+        level: 'danger',
+        type: 'X-Ray Radiation',
+        harmLevel: 'Very High Risk',
+        reason: 'Ionizing radiation penetrates tissue and directly damages DNA',
+        effects: 'Increased cancer risk; DNA mutations; radiation sickness at high doses; cell death; potential genetic damage',
+        protection: 'Minimize medical X-ray frequency; ensure proper shielding (lead aprons); follow ALARA principle (As Low As Reasonably Achievable); pregnant women must inform technicians'
+      };
+    }
+    return {
+      level: 'danger',
+      type: 'Gamma Ray Radiation',
+      harmLevel: 'Extreme Risk',
+      reason: 'Highest energy photons, deeply penetrating ionizing radiation that destroys cellular structures',
+      effects: 'Severe DNA damage; acute radiation syndrome; multiple organ failure; cancer; death at sufficient doses; genetic mutations',
+      protection: 'Requires thick lead or concrete shielding; avoid radioactive materials; evacuate nuclear incident areas immediately; only trained professionals with proper equipment should handle sources'
+    };
+  };
+
+  const safetyInfo = getSafetyInfo(wavelength);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 overflow-hidden">
@@ -253,43 +334,87 @@ export default function Home() {
             </div>
 
             <div className={`backdrop-blur-xl rounded-2xl border p-6 ${
-              isDangerous 
+              safetyInfo.level === 'danger' 
                 ? 'bg-gradient-to-br from-red-500/20 to-orange-500/20 border-red-500/30' 
+                : safetyInfo.level === 'caution'
+                ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-yellow-500/30'
                 : 'bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20'
             }`}>
-              <h3 className={`text-sm uppercase tracking-wider mb-4 ${isDangerous ? 'text-red-200' : 'text-green-200'}`}>
-                Safety Status
+              <h3 className={`text-sm uppercase tracking-wider mb-4 ${
+                safetyInfo.level === 'danger' ? 'text-red-200' : 
+                safetyInfo.level === 'caution' ? 'text-yellow-200' : 'text-green-200'
+              }`}>
+                Health & Safety Information
               </h3>
-              <div className="space-y-4">
-                {isDangerous ? (
-                  <>
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg">⚠️</span>
-                      </div>
-                      <div>
-                        <div className="text-white font-medium mb-1">Caution Required</div>
-                        <div className="text-sm text-red-200" data-testid="text-warning">
-                          High-energy radiation can be harmful
-                        </div>
-                      </div>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    safetyInfo.level === 'danger' ? 'bg-red-500/20' :
+                    safetyInfo.level === 'caution' ? 'bg-yellow-500/20' : 'bg-green-500/20'
+                  }`}>
+                    <span className="text-lg">
+                      {safetyInfo.level === 'danger' ? '☢️' : safetyInfo.level === 'caution' ? '⚠️' : '✓'}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-white font-medium mb-1" data-testid="text-safety-type">
+                      {safetyInfo.type}
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                        <span className="text-lg">✓</span>
-                      </div>
-                      <div>
-                        <div className="text-white font-medium mb-1">Generally Safe</div>
-                        <div className="text-sm text-green-200">
-                          Low-energy radiation exposure
-                        </div>
-                      </div>
+                    <Badge className={`mb-2 ${
+                      safetyInfo.level === 'danger' ? 'bg-red-500/30 text-red-100' :
+                      safetyInfo.level === 'caution' ? 'bg-yellow-500/30 text-yellow-100' : 'bg-green-500/30 text-green-100'
+                    }`}>
+                      {safetyInfo.harmLevel}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <div className={`font-medium mb-1 ${
+                      safetyInfo.level === 'danger' ? 'text-red-100' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-100' : 'text-green-100'
+                    }`}>
+                      Why it's {safetyInfo.level === 'safe' ? 'safe' : 'harmful'}:
                     </div>
-                  </>
-                )}
+                    <div className={`${
+                      safetyInfo.level === 'danger' ? 'text-red-200/90' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-200/90' : 'text-green-200/90'
+                    }`} data-testid="text-reason">
+                      {safetyInfo.reason}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/10">
+                    <div className={`font-medium mb-1 ${
+                      safetyInfo.level === 'danger' ? 'text-red-100' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-100' : 'text-green-100'
+                    }`}>
+                      Health Effects:
+                    </div>
+                    <div className={`${
+                      safetyInfo.level === 'danger' ? 'text-red-200/90' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-200/90' : 'text-green-200/90'
+                    }`} data-testid="text-effects">
+                      {safetyInfo.effects}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/10">
+                    <div className={`font-medium mb-1 ${
+                      safetyInfo.level === 'danger' ? 'text-red-100' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-100' : 'text-green-100'
+                    }`}>
+                      How to Protect Yourself:
+                    </div>
+                    <div className={`${
+                      safetyInfo.level === 'danger' ? 'text-red-200/90' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-200/90' : 'text-green-200/90'
+                    }`} data-testid="text-protection">
+                      {safetyInfo.protection}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
