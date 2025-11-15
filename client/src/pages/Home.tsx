@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { RotateCcw, Sun, Moon, Zap, Activity } from 'lucide-react';
 import WaveCanvas from '@/components/WaveCanvas';
 import ParticleField from '@/components/ParticleField';
+import WaveComparison from '@/components/WaveComparison';
+import WaveClassificationCard from '@/components/WaveClassificationCard';
 
 const SPEED_OF_LIGHT = 3e8;
 const PLANCK_CONSTANT = 6.626e-34;
@@ -218,6 +220,7 @@ export default function Home() {
               <div className="h-[60vh] min-h-[400px] relative">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent"></div>
                 <WaveCanvas frequency={frequency} wavelength={wavelength} />
+                <WaveComparison wavelength={wavelength} amplitude={120} />
                 <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/50 to-transparent"></div>
               </div>
             </div>
@@ -281,7 +284,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             <div className="backdrop-blur-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20 p-6">
               <h3 className="text-purple-200 text-sm uppercase tracking-wider mb-4">Wave Properties</h3>
               <div className="space-y-4">
@@ -414,6 +417,8 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            <WaveClassificationCard wavelength={wavelength} />
           </div>
 
           <div className="mt-8 backdrop-blur-xl bg-white/5 rounded-2xl border border-white/10 p-6">

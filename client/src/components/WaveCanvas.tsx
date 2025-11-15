@@ -54,7 +54,29 @@ export default function WaveCanvas({ frequency, wavelength, className = '' }: Wa
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
 
-      const pixelsPerWavelength = Math.min(width / 3, Math.max(20, width / (frequency / 1e12)));
+      // Fixed calculation for better radio wave visualization
+      // Use logarithmic scaling to handle the vast range of wavelengths
+      const logWavelength = Math.log10(wavelength);
+      const logFrequency = Math.log10(frequency);
+      
+      // For radio waves (long wavelengths), use fewer waves
+      // For shorter wavelengths, use more waves
+      let pixelsPerWavelength;
+      
+      if (wavelength >= 1) {
+        // Radio waves: show 1-3 complete waves
+        pixelsPerWavelength = width / (1 + logWavelength / 10);
+      } else if (wavelength >= 1e-3) {
+        // Microwaves: show 2-4 waves
+        pixelsPerWavelength = width / 3;
+      } else if (wavelength >= 1e-6) {
+        // Infrared: show 3-5 waves
+        pixelsPerWavelength = width / 4;
+      } else {
+        // Visible, UV, X-ray, Gamma: show more oscillations
+        pixelsPerWavelength = Math.max(20, width / 5);
+      }
+
       const color = getWaveColor(wavelength);
 
       ctx.strokeStyle = color;
