@@ -1,418 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { RotateCcw, AlertTriangle, Info } from 'lucide-react';
+import { RotateCcw, Sun, Moon, Zap, Activity } from 'lucide-react';
+import WaveCanvas from '@/components/WaveCanvas';
+import ParticleField from '@/components/ParticleField';
 
 const SPEED_OF_LIGHT = 3e8;
 const PLANCK_CONSTANT = 6.626e-34;
 const MIN_FREQUENCY = 1e3;
 const MAX_FREQUENCY = 1e20;
 
-interface WaveSubtype {
-  name: string;
-  wavelengthRange: string;
-  description: string;
-  uses: string[];
-}
-
-interface WaveTypeData {
-  type: string;
-  icon: string;
-  subtypes: WaveSubtype[];
-  backgroundColor: string;
-  textColor: string;
-  safetyLevel: 'safe' | 'caution' | 'danger';
-  safetyWarning: string;
-  referenceObjects: string[];
-  healthEffects: string;
-  protection: string;
-  practicalUses: string[];
-}
-
-const WAVE_DATA: { [key: string]: WaveTypeData } = {
-  'Radio Waves': {
-    type: 'Radio Waves',
-    icon: '📡',
-    backgroundColor: 'rgb(255, 255, 255)',
-    textColor: 'rgb(0, 0, 0)',
-    safetyLevel: 'safe',
-    safetyWarning: 'Generally safe at normal exposure levels',
-    referenceObjects: ['Buildings (100m)', 'Football Field (100m)', 'Mountain (1km)'],
-    healthEffects: 'No known harmful effects at typical environmental exposure levels. High-power transmitters may interfere with medical devices.',
-    protection: 'Maintain safe distance from broadcast towers and high-power antennas',
-    practicalUses: [
-      'AM/FM Radio Broadcasting - Music and talk radio transmission',
-      'Television Broadcasting - Over-the-air TV signals',
-      'Mobile Phone Communication - Cellular networks',
-      'Wi-Fi Networks - Wireless internet connectivity',
-      'Satellite Communication - GPS, weather satellites',
-      'Radio Astronomy - Studying celestial objects',
-      'RFID Tags - Inventory tracking and contactless payments',
-      'Emergency Services Radio - Police, fire, ambulance communication'
-    ],
-    subtypes: [
-      {
-        name: 'AM (Amplitude Modulation)',
-        wavelengthRange: '100m - 1km',
-        description: 'Long wavelength, lower frequency',
-        uses: ['Talk radio', 'News broadcasting', 'Long-distance communication']
-      },
-      {
-        name: 'FM (Frequency Modulation)',
-        wavelengthRange: '2.8m - 3.4m',
-        description: 'Higher frequency, clearer audio quality',
-        uses: ['Music radio', 'High-fidelity broadcasting', 'Two-way radio']
-      },
-      {
-        name: 'Shortwave',
-        wavelengthRange: '10m - 100m',
-        description: 'International broadcasting range',
-        uses: ['International radio', 'Maritime communication', 'Aviation']
-      },
-      {
-        name: 'VHF (Very High Frequency)',
-        wavelengthRange: '1m - 10m',
-        description: '30-300 MHz',
-        uses: ['FM radio', 'TV broadcasting', 'Air traffic control']
-      },
-      {
-        name: 'UHF (Ultra High Frequency)',
-        wavelengthRange: '10cm - 1m',
-        description: '300 MHz - 3 GHz',
-        uses: ['TV broadcasting', 'Mobile phones', 'GPS', 'Bluetooth']
-      }
-    ]
-  },
-  'Microwaves': {
-    type: 'Microwaves',
-    icon: '📶',
-    backgroundColor: 'rgb(220, 220, 220)',
-    textColor: 'rgb(20, 20, 20)',
-    safetyLevel: 'caution',
-    safetyWarning: 'Can cause tissue heating at high intensities',
-    referenceObjects: ['Bee (1cm)', 'Grain of Rice (5mm)', 'Pencil Point (1mm)'],
-    healthEffects: 'Dielectric heating of water molecules in tissue. High-intensity exposure can cause internal burns without surface sensation.',
-    protection: 'Never operate microwave ovens with damaged doors. Maintain distance from radar installations. Limit prolonged cell phone use near head.',
-    practicalUses: [
-      'Microwave Ovens - Food heating via water molecule excitation',
-      'Radar Systems - Weather radar, air traffic control, speed guns',
-      'Satellite Communications - TV, internet, phone via satellite',
-      'Mobile Networks - 4G, 5G cellular communication',
-      'Wi-Fi Routers - Wireless internet (2.4/5 GHz)',
-      'Bluetooth Devices - Short-range wireless communication',
-      'Microwave Links - Point-to-point communication',
-      'Radio Astronomy - Cosmic microwave background studies'
-    ],
-    subtypes: [
-      {
-        name: 'L-band',
-        wavelengthRange: '15cm - 30cm',
-        description: '1-2 GHz frequency range',
-        uses: ['GPS navigation', 'Mobile satellite phones', 'Aircraft surveillance']
-      },
-      {
-        name: 'S-band',
-        wavelengthRange: '7.5cm - 15cm',
-        description: '2-4 GHz frequency range',
-        uses: ['Weather radar', 'Surface ship radar', 'Wi-Fi (2.4 GHz)']
-      },
-      {
-        name: 'C-band',
-        wavelengthRange: '3.75cm - 7.5cm',
-        description: '4-8 GHz frequency range',
-        uses: ['Satellite TV', 'Long-distance radio telecommunications']
-      },
-      {
-        name: 'X-band',
-        wavelengthRange: '2.5cm - 3.75cm',
-        description: '8-12 GHz frequency range',
-        uses: ['Military radar', 'Weather monitoring', 'Vehicle speed detection']
-      },
-      {
-        name: 'Ku-band',
-        wavelengthRange: '1.7cm - 2.5cm',
-        description: '12-18 GHz frequency range',
-        uses: ['Satellite TV broadcasting', 'VSAT communications']
-      },
-      {
-        name: 'K-band',
-        wavelengthRange: '1.1cm - 1.7cm',
-        description: '18-27 GHz frequency range',
-        uses: ['Satellite communications', 'Astronomical observations']
-      },
-      {
-        name: 'Ka-band',
-        wavelengthRange: '0.75cm - 1.1cm',
-        description: '27-40 GHz frequency range',
-        uses: ['Satellite internet', '5G networks', 'High-resolution radar']
-      }
-    ]
-  },
-  'Infrared': {
-    type: 'Infrared',
-    icon: '🔥',
-    backgroundColor: 'rgb(139, 0, 0)',
-    textColor: 'rgb(255, 220, 220)',
-    safetyLevel: 'safe',
-    safetyWarning: 'Safe for most applications, eye protection needed for lasers',
-    referenceObjects: ['Bacteria (1-10 μm)', 'Human Hair Width (75 μm)', 'Red Blood Cell (8 μm)'],
-    healthEffects: 'Absorbed by skin surface and felt as heat. Prolonged high-intensity exposure can cause skin burns. IR lasers can damage eyes.',
-    protection: 'Avoid prolonged exposure to intense IR sources. Wear protective eyewear around IR lasers. Use heat-resistant barriers when necessary.',
-    practicalUses: [
-      'Night Vision Devices - Military and security applications',
-      'Thermal Imaging - Building inspection, medical diagnosis',
-      'Remote Controls - TV, AC, and appliance control',
-      'Fiber Optic Communication - High-speed internet transmission',
-      'Heat Lamps - Physical therapy and industrial heating',
-      'Infrared Spectroscopy - Chemical analysis and material identification',
-      'Automotive Sensors - Parking assistance, night vision',
-      'Astronomy - Observing cool stars and dust clouds'
-    ],
-    subtypes: [
-      {
-        name: 'Near-Infrared (NIR)',
-        wavelengthRange: '0.75 - 1.4 μm',
-        description: 'Closest to visible light',
-        uses: ['Night vision', 'Fiber optics', 'Remote controls', 'Medical imaging']
-      },
-      {
-        name: 'Mid-Infrared (MIR)',
-        wavelengthRange: '1.4 - 3 μm',
-        description: 'Medium wavelength range',
-        uses: ['Heat-seeking missiles', 'Thermal imaging', 'Spectroscopy']
-      },
-      {
-        name: 'Far-Infrared (FIR)',
-        wavelengthRange: '3 - 1000 μm',
-        description: 'Longest IR wavelengths',
-        uses: ['Astronomical observations', 'Heat sensors', 'Thermal therapy']
-      }
-    ]
-  },
-  'Visible Light': {
-    type: 'Visible Light',
-    icon: '🌈',
-    backgroundColor: 'linear-gradient(to right, rgb(255,0,0), rgb(255,127,0), rgb(255,255,0), rgb(0,255,0), rgb(0,0,255), rgb(75,0,130), rgb(148,0,211))',
-    textColor: 'rgb(255, 255, 255)',
-    safetyLevel: 'safe',
-    safetyWarning: 'Safe for everyday exposure, avoid direct laser exposure',
-    referenceObjects: ['Virus (100 nm)', 'DNA Width (2 nm)', 'Small Bacteria (500 nm)'],
-    healthEffects: 'Essential for vision and health (vitamin D synthesis). High-intensity sources (lasers, welding arcs) can permanently damage retina. Prolonged bright light causes eye strain.',
-    protection: 'Never look directly at lasers or the sun. Wear welding masks during welding. Use sunglasses in very bright conditions. Ensure proper lighting to avoid eye strain.',
-    practicalUses: [
-      'Human Vision - Allows us to see the world around us',
-      'Photography - Capturing images and videos',
-      'Displays - TVs, monitors, smartphone screens',
-      'Lighting - LED bulbs, fluorescent lights, incandescent',
-      'Optical Fiber Communication - High-speed data transmission',
-      'Lasers - Surgery, manufacturing, entertainment (light shows)',
-      'Photosynthesis - Plant growth and oxygen production',
-      'Optical Microscopy - Viewing cells and small organisms',
-      'Traffic Signals - Red, yellow, green lights',
-      'Color Printing - CMYK and RGB color reproduction'
-    ],
-    subtypes: [
-      {
-        name: 'Red Light',
-        wavelengthRange: '620-750 nm',
-        description: 'Longest visible wavelength, lowest energy',
-        uses: ['Traffic signals', 'LED therapy', 'Photography darkrooms', 'Astronomy (preserves night vision)']
-      },
-      {
-        name: 'Orange Light',
-        wavelengthRange: '590-620 nm',
-        description: 'Between red and yellow',
-        uses: ['Street lighting (sodium lamps)', 'Warning signals', 'Decorative lighting']
-      },
-      {
-        name: 'Yellow Light',
-        wavelengthRange: '570-590 nm',
-        description: 'High visibility color',
-        uses: ['Caution signals', 'Fog lights', 'High-visibility safety gear']
-      },
-      {
-        name: 'Green Light',
-        wavelengthRange: '495-570 nm',
-        description: 'Peak sensitivity of human eye',
-        uses: ['Traffic signals (go)', 'Laser pointers', 'Night vision displays', 'Surgical lasers']
-      },
-      {
-        name: 'Blue Light',
-        wavelengthRange: '450-495 nm',
-        description: 'Short wavelength, higher energy',
-        uses: ['Blu-ray discs', 'Blue LED lighting', 'Phototherapy for jaundice', 'Dental curing']
-      },
-      {
-        name: 'Indigo Light',
-        wavelengthRange: '420-450 nm',
-        description: 'Deep blue-violet',
-        uses: ['Decorative lighting', 'Artistic displays', 'Optical data storage']
-      },
-      {
-        name: 'Violet Light',
-        wavelengthRange: '380-420 nm',
-        description: 'Shortest visible wavelength, borders UV',
-        uses: ['Fluorescence excitation', 'Authentication (security features)', 'Artistic lighting']
-      }
-    ]
-  },
-  'Ultraviolet': {
-    type: 'Ultraviolet',
-    icon: '☀️',
-    backgroundColor: 'rgb(75, 0, 130)',
-    textColor: 'rgb(220, 200, 255)',
-    safetyLevel: 'danger',
-    safetyWarning: 'Can cause DNA damage, skin cancer, and eye damage',
-    referenceObjects: ['Large Molecule (10 nm)', 'Protein (5-50 nm)', 'Virus (20-300 nm)'],
-    healthEffects: 'DNA damage leading to skin cancer (melanoma, basal/squamous cell carcinoma). Premature aging. Cataracts and eye damage. Immune system suppression. Sunburn.',
-    protection: 'Apply broad-spectrum SPF 30+ sunscreen every 2 hours. Wear UV-blocking sunglasses and wide-brimmed hats. Limit sun exposure 10am-4pm. Wear long sleeves. Avoid tanning beds completely.',
-    practicalUses: [
-      'Sterilization - Killing bacteria, viruses in hospitals, water treatment',
-      'Black Lights - Security features, art displays, party lighting',
-      'Forensics - Crime scene investigation (detecting bodily fluids)',
-      'Counterfeit Detection - Verifying currency and documents',
-      'Phototherapy - Treating psoriasis, eczema, jaundice',
-      'Tanning Beds - Artificial tanning (health risks)',
-      'Curing - Dental fillings, nail polish, adhesives',
-      'Vitamin D Synthesis - Essential for bone health (UV-B from sun)'
-    ],
-    subtypes: [
-      {
-        name: 'UV-A',
-        wavelengthRange: '315-400 nm',
-        description: 'Longest UV, 95% of UV reaching Earth',
-        uses: ['Tanning beds', 'Black lights', 'Phototherapy', 'Insect traps', 'Curing adhesives']
-      },
-      {
-        name: 'UV-B',
-        wavelengthRange: '280-315 nm',
-        description: 'Causes sunburn, partially blocked by ozone',
-        uses: ['Vitamin D synthesis', 'Psoriasis treatment', 'Reptile lighting']
-      },
-      {
-        name: 'UV-C',
-        wavelengthRange: '100-280 nm',
-        description: 'Germicidal, blocked by ozone layer',
-        uses: ['Water purification', 'Air sterilization', 'Surface disinfection', 'Hospital sanitization']
-      }
-    ]
-  },
-  'X-Rays': {
-    type: 'X-Rays',
-    icon: '💉',
-    backgroundColor: 'rgb(0, 0, 50)',
-    textColor: 'rgb(180, 200, 255)',
-    safetyLevel: 'danger',
-    safetyWarning: 'Ionizing radiation - can cause cancer and genetic damage',
-    referenceObjects: ['Atom (0.1 nm)', 'Small Molecule (0.5 nm)', 'Atomic Nucleus vicinity'],
-    healthEffects: 'Ionizing radiation that damages DNA directly. Increased cancer risk (cumulative). DNA mutations. Radiation sickness at high doses. Cell death. Potential genetic damage passed to offspring.',
-    protection: 'Minimize frequency of medical X-rays. Use lead aprons and thyroid shields during imaging. Follow ALARA principle (As Low As Reasonably Achievable). Pregnant women must inform X-ray technicians. Radiologists stand behind lead barriers.',
-    practicalUses: [
-      'Medical Imaging - X-rays of bones, chest, dental radiography',
-      'CT Scans - Detailed 3D internal body imaging',
-      'Cancer Treatment - Radiation therapy to kill tumors',
-      'Airport Security - Baggage scanning systems',
-      'Crystallography - Determining molecular structures',
-      'Industrial Inspection - Detecting flaws in materials/welds',
-      'Art Analysis - Examining paintings for authenticity',
-      'Astronomy - Studying black holes, neutron stars, supernovae'
-    ],
-    subtypes: [
-      {
-        name: 'Soft X-Rays',
-        wavelengthRange: '0.01-10 nm',
-        description: 'Lower energy, less penetrating',
-        uses: ['Medical imaging (bones, chest)', 'Dental X-rays', 'Security scanners', 'Mammography']
-      },
-      {
-        name: 'Hard X-Rays',
-        wavelengthRange: '0.001-0.01 nm',
-        description: 'Higher energy, deeply penetrating',
-        uses: ['Cancer radiation therapy', 'Crystallography', 'Industrial inspection', 'Astronomy']
-      }
-    ]
-  },
-  'Gamma Rays': {
-    type: 'Gamma Rays',
-    icon: '☢️',
-    backgroundColor: 'rgb(0, 0, 0)',
-    textColor: 'rgb(200, 200, 200)',
-    safetyLevel: 'danger',
-    safetyWarning: 'Extreme danger - highly penetrating ionizing radiation',
-    referenceObjects: ['Atomic Nucleus (1 fm)', 'Proton (0.8 fm)', 'Subatomic scale'],
-    healthEffects: 'Severe DNA damage throughout body. Acute radiation syndrome (nausea, bleeding, organ failure). Multiple organ damage. Cancer. Death at sufficient doses. Genetic mutations affecting future generations.',
-    protection: 'Requires thick lead (several cm) or concrete shielding (several meters). Avoid all radioactive materials. Evacuate nuclear incident areas immediately. Only trained radiation professionals with dosimeters and proper equipment should handle sources. Time, distance, and shielding are key.',
-    practicalUses: [
-      'Cancer Treatment - Gamma knife surgery, tumor irradiation',
-      'Sterilization - Medical equipment, food preservation',
-      'Radiography - Industrial flaw detection (similar to X-rays)',
-      'Nuclear Medicine - PET scans for disease diagnosis',
-      'Astronomy - Studying supernova, pulsars, gamma-ray bursts',
-      'Food Irradiation - Killing bacteria, extending shelf life',
-      'Research - Studying nuclear reactions and particle physics',
-      'Gauging - Measuring material thickness/density in manufacturing'
-    ],
-    subtypes: [
-      {
-        name: 'Low-Energy Gamma',
-        wavelengthRange: '< 0.01 nm',
-        description: 'From nuclear transitions',
-        uses: ['Medical imaging (PET scans)', 'Food sterilization', 'Cancer treatment']
-      },
-      {
-        name: 'High-Energy Gamma',
-        wavelengthRange: '< 0.001 nm',
-        description: 'From radioactive decay',
-        uses: ['Industrial radiography', 'Research applications', 'Nuclear power']
-      },
-      {
-        name: 'Ultra-High Energy Gamma',
-        wavelengthRange: '< 0.0001 nm',
-        description: 'From cosmic sources',
-        uses: ['Astrophysics research', 'Particle physics', 'Studying extreme cosmic events']
-      }
-    ]
-  }
-};
-
-function getWaveTypeFromWavelength(wl: number): string {
-  if (wl >= 1e-3) return 'Radio Waves';
-  if (wl >= 1e-6) return 'Microwaves';
-  if (wl >= 7e-7) return 'Infrared';
-  if (wl >= 4e-7) return 'Visible Light';
-  if (wl >= 1e-8) return 'Ultraviolet';
-  if (wl >= 1e-11) return 'X-Rays';
-  return 'Gamma Rays';
-}
-
-function getBackgroundStyle(waveType: string): { background: string; color: string } {
-  const data = WAVE_DATA[waveType];
-  return {
-    background: data.backgroundColor,
-    color: data.textColor
-  };
-}
-
 export default function Home() {
+  const [isDark, setIsDark] = useState(true);
   const [frequency, setFrequency] = useState(5e14);
   const [wavelength, setWavelength] = useState(6e-7);
 
-  const handleFrequencySliderChange = (value: number[]) => {
-    const sliderPercent = value[0];
-    const logFreq = Math.log10(MIN_FREQUENCY) + (sliderPercent / 100) * (Math.log10(MAX_FREQUENCY) - Math.log10(MIN_FREQUENCY));
-    const newFrequency = Math.pow(10, logFreq);
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+    setIsDark(true);
+  }, []);
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDark;
+    setIsDark(newDarkMode);
+    document.documentElement.classList.toggle('dark', newDarkMode);
+  };
+
+  const handleFrequencyChange = (value: number[]) => {
+    const newFrequency = value[0];
     setFrequency(newFrequency);
     setWavelength(SPEED_OF_LIGHT / newFrequency);
   };
 
-  const handleWavelengthSliderChange = (value: number[]) => {
-    const minWavelengthLog = Math.log10(SPEED_OF_LIGHT / MAX_FREQUENCY);
-    const maxWavelengthLog = Math.log10(SPEED_OF_LIGHT / MIN_FREQUENCY);
-    const sliderPercent = value[0];
-    const logWavelength = minWavelengthLog + (sliderPercent / 100) * (maxWavelengthLog - minWavelengthLog);
-    const newWavelength = Math.pow(10, logWavelength);
+  const handleWavelengthChange = (value: number[]) => {
+    const newWavelength = value[0];
     setWavelength(newWavelength);
     setFrequency(SPEED_OF_LIGHT / newWavelength);
   };
@@ -423,237 +45,399 @@ export default function Home() {
   };
 
   const energy = PLANCK_CONSTANT * frequency;
-  const waveType = getWaveTypeFromWavelength(wavelength);
-  const waveData = WAVE_DATA[waveType];
-  const bgStyle = getBackgroundStyle(waveType);
+
+  const frequencyLog = Math.log10(frequency);
+  const frequencySliderValue = ((frequencyLog - Math.log10(MIN_FREQUENCY)) / (Math.log10(MAX_FREQUENCY) - Math.log10(MIN_FREQUENCY))) * 100;
+
+  const wavelengthLog = Math.log10(wavelength);
+  const minWavelengthLog = Math.log10(SPEED_OF_LIGHT / MAX_FREQUENCY);
+  const maxWavelengthLog = Math.log10(SPEED_OF_LIGHT / MIN_FREQUENCY);
+  const wavelengthSliderValue = ((wavelengthLog - minWavelengthLog) / (maxWavelengthLog - minWavelengthLog)) * 100;
+
+  const handleFrequencySliderChange = (value: number[]) => {
+    const sliderPercent = value[0];
+    const logFreq = Math.log10(MIN_FREQUENCY) + (sliderPercent / 100) * (Math.log10(MAX_FREQUENCY) - Math.log10(MIN_FREQUENCY));
+    const newFrequency = Math.pow(10, logFreq);
+    handleFrequencyChange([newFrequency]);
+  };
+
+  const handleWavelengthSliderChange = (value: number[]) => {
+    const sliderPercent = value[0];
+    const logWavelength = minWavelengthLog + (sliderPercent / 100) * (maxWavelengthLog - minWavelengthLog);
+    const newWavelength = Math.pow(10, logWavelength);
+    handleWavelengthChange([newWavelength]);
+  };
+
+  const getWaveInfo = (wl: number) => {
+    if (wl >= 1e-1) return { type: 'Radio Wave', color: 'from-red-500 to-pink-500', icon: '📡' };
+    if (wl >= 1e-3) return { type: 'Radio Wave', color: 'from-orange-500 to-red-500', icon: '📻' };
+    if (wl >= 1e-6) return { type: 'Microwave', color: 'from-yellow-500 to-orange-500', icon: '📶' };
+    if (wl >= 7e-7) return { type: 'Infrared', color: 'from-red-400 to-orange-400', icon: '🌡️' };
+    if (wl >= 4e-7) return { type: 'Visible Light', color: 'from-violet-500 via-blue-500 via-green-500 via-yellow-500 to-red-500', icon: '🌈' };
+    if (wl >= 1e-8) return { type: 'Ultraviolet', color: 'from-purple-500 to-violet-500', icon: '☀️' };
+    if (wl >= 1e-11) return { type: 'X-Ray', color: 'from-blue-600 to-purple-600', icon: '⚡' };
+    return { type: 'Gamma Ray', color: 'from-purple-700 to-pink-700', icon: '☢️' };
+  };
+
+  const waveInfo = getWaveInfo(wavelength);
 
   const formatScientific = (value: number): string => {
     return value.toExponential(2);
   };
 
-  const frequencyLog = Math.log10(frequency);
-  const frequencySliderValue = ((frequencyLog - Math.log10(MIN_FREQUENCY)) / (Math.log10(MAX_FREQUENCY) - Math.log10(MIN_FREQUENCY))) * 100;
+  const getSafetyInfo = (wl: number) => {
+    if (wl >= 1e-1) {
+      return {
+        level: 'safe',
+        type: 'Long Radio Waves',
+        harmLevel: 'Minimal Risk',
+        reason: 'Very low energy, long wavelengths cannot penetrate biological tissue',
+        effects: 'No known harmful effects at typical exposure levels',
+        protection: 'No special precautions needed for normal environmental exposure'
+      };
+    }
+    if (wl >= 1e-3) {
+      return {
+        level: 'safe',
+        type: 'AM/FM Radio Waves',
+        harmLevel: 'Low Risk',
+        reason: 'Low energy radiation, mostly passes through or reflects off the body',
+        effects: 'Potential interference with medical devices near high-power transmitters',
+        protection: 'Maintain safe distance from broadcast towers and high-power antennas'
+      };
+    }
+    if (wl >= 1e-6) {
+      return {
+        level: 'caution',
+        type: 'Microwave Radiation',
+        harmLevel: 'Moderate Risk',
+        reason: 'Can cause dielectric heating of water molecules in biological tissue',
+        effects: 'Tissue heating, potential burns from high-intensity exposure; can heat internal organs without surface sensation',
+        protection: 'Never operate microwave ovens with damaged doors; maintain distance from radar and communication towers; limit prolonged cell phone use'
+      };
+    }
+    if (wl >= 7e-7) {
+      return {
+        level: 'safe',
+        type: 'Infrared Radiation',
+        harmLevel: 'Low Risk',
+        reason: 'Absorbed by skin surface, felt as heat',
+        effects: 'Skin burns from prolonged high-intensity exposure; potential eye damage from lasers',
+        protection: 'Avoid prolonged exposure to intense IR sources; wear protective eyewear around IR lasers'
+      };
+    }
+    if (wl >= 4e-7) {
+      return {
+        level: 'safe',
+        type: 'Visible Light',
+        harmLevel: 'Low Risk',
+        reason: 'Natural exposure essential for vision and health',
+        effects: 'High-intensity sources (lasers, welding) can damage retina; prolonged bright light causes eye strain',
+        protection: 'Never look directly at lasers or the sun; wear welding masks during welding; use sunglasses in bright conditions'
+      };
+    }
+    if (wl >= 1e-8) {
+      return {
+        level: 'danger',
+        type: 'Ultraviolet Radiation',
+        harmLevel: 'High Risk',
+        reason: 'Photons carry enough energy to damage DNA and break chemical bonds',
+        effects: 'Skin cancer (melanoma, basal cell carcinoma); premature skin aging; cataracts and eye damage; immune system suppression',
+        protection: 'Apply broad-spectrum SPF 30+ sunscreen; wear UV-blocking sunglasses; limit sun exposure 10am-4pm; wear protective clothing; avoid tanning beds'
+      };
+    }
+    if (wl >= 1e-11) {
+      return {
+        level: 'danger',
+        type: 'X-Ray Radiation',
+        harmLevel: 'Very High Risk',
+        reason: 'Ionizing radiation penetrates tissue and directly damages DNA',
+        effects: 'Increased cancer risk; DNA mutations; radiation sickness at high doses; cell death; potential genetic damage',
+        protection: 'Minimize medical X-ray frequency; ensure proper shielding (lead aprons); follow ALARA principle (As Low As Reasonably Achievable); pregnant women must inform technicians'
+      };
+    }
+    return {
+      level: 'danger',
+      type: 'Gamma Ray Radiation',
+      harmLevel: 'Extreme Risk',
+      reason: 'Highest energy photons, deeply penetrating ionizing radiation that destroys cellular structures',
+      effects: 'Severe DNA damage; acute radiation syndrome; multiple organ failure; cancer; death at sufficient doses; genetic mutations',
+      protection: 'Requires thick lead or concrete shielding; avoid radioactive materials; evacuate nuclear incident areas immediately; only trained professionals with proper equipment should handle sources'
+    };
+  };
 
-  const minWavelengthLog = Math.log10(SPEED_OF_LIGHT / MAX_FREQUENCY);
-  const maxWavelengthLog = Math.log10(SPEED_OF_LIGHT / MIN_FREQUENCY);
-  const wavelengthLog = Math.log10(wavelength);
-  const wavelengthSliderValue = ((wavelengthLog - minWavelengthLog) / (maxWavelengthLog - minWavelengthLog)) * 100;
+  const safetyInfo = getSafetyInfo(wavelength);
 
   return (
-    <div 
-      className="min-h-screen w-full transition-all duration-700 p-6"
-      style={{ 
-        background: bgStyle.background,
-        color: bgStyle.color
-      }}
-    >
-      <div className="max-w-[1600px] mx-auto">
-        {/* Top Section - Wave Type, Warning, Subgroup */}
-        <div className="grid grid-cols-3 gap-6 mb-6">
-          {/* Wave Type */}
-          <Card className="border-2" style={{ borderColor: bgStyle.color, backgroundColor: 'transparent' }}>
-            <CardContent className="p-6">
-              <div className="text-sm font-semibold mb-2 opacity-70">WAVE TYPE</div>
-              <div className="text-4xl font-bold mb-2 flex items-center gap-3">
-                <span className="text-5xl">{waveData.icon}</span>
-                <span data-testid="text-wave-type">{waveData.type}</span>
-              </div>
-            </CardContent>
-          </Card>
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-purple-950 to-gray-950 overflow-hidden">
+      <div className="absolute inset-0 opacity-30">
+        <ParticleField />
+      </div>
 
-          {/* Safety Warning */}
-          <Card className="border-2" style={{ borderColor: bgStyle.color, backgroundColor: 'transparent' }}>
-            <CardContent className="p-6">
-              <div className="text-sm font-semibold mb-2 opacity-70 flex items-center gap-2">
-                {waveData.safetyLevel === 'danger' && <AlertTriangle className="w-4 h-4" />}
-                {waveData.safetyLevel === 'caution' && <Info className="w-4 h-4" />}
-                SAFETY WARNING
-              </div>
-              <Badge 
-                className="text-base px-4 py-2"
-                style={{
-                  backgroundColor: waveData.safetyLevel === 'danger' ? 'rgba(220, 38, 38, 0.2)' :
-                                   waveData.safetyLevel === 'caution' ? 'rgba(234, 179, 8, 0.2)' :
-                                   'rgba(34, 197, 94, 0.2)',
-                  color: bgStyle.color,
-                  borderColor: bgStyle.color
-                }}
-                data-testid="text-safety-warning"
-              >
-                {waveData.safetyWarning}
-              </Badge>
-            </CardContent>
-          </Card>
+      <div className="relative z-10">
+        <nav className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+              <Activity className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-light text-white tracking-wide" data-testid="text-title">
+                EM Spectrum Lab
+              </h1>
+              <p className="text-xs text-purple-300">Interactive Wave Visualizer</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleDarkMode}
+              className="text-white hover-elevate"
+              data-testid="button-theme-toggle"
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              className="gap-2 border-purple-500/30 text-purple-200 hover:bg-purple-500/10"
+              data-testid="button-reset"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Reset
+            </Button>
+          </div>
+        </nav>
 
-          {/* Current Subtype Info */}
-          <Card className="border-2" style={{ borderColor: bgStyle.color, backgroundColor: 'transparent' }}>
-            <CardContent className="p-6">
-              <div className="text-sm font-semibold mb-2 opacity-70">SUBTYPES ({waveData.subtypes.length})</div>
-              <div className="text-xl font-semibold" data-testid="text-subtype">
-                {waveData.subtypes[0].name}
+        <div className="max-w-7xl mx-auto px-6 pt-8 pb-16">
+          <div className="relative mb-8">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-blue-500/20 blur-3xl"></div>
+            <div className="relative backdrop-blur-xl bg-white/5 rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+              <div className="absolute top-4 right-4 z-20">
+                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 px-4 py-2 text-sm">
+                  {waveInfo.icon} {waveInfo.type}
+                </Badge>
               </div>
-              <div className="text-sm opacity-70 mt-1">
-                + {waveData.subtypes.length - 1} more variants
+              <div className="h-[60vh] min-h-[400px] relative">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent"></div>
+                <WaveCanvas frequency={frequency} wavelength={wavelength} />
+                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/50 to-transparent"></div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
 
-        {/* Middle Section - Reference Object, Wave Visualization, Wavelength */}
-        <div className="grid grid-cols-3 gap-6 mb-6">
-          {/* Reference Objects */}
-          <Card className="border-2" style={{ borderColor: bgStyle.color, backgroundColor: 'transparent' }}>
-            <CardContent className="p-6">
-              <div className="text-sm font-semibold mb-3 opacity-70">SIZE COMPARISON</div>
-              <div className="space-y-2">
-                {waveData.referenceObjects.map((obj, idx) => (
-                  <div key={idx} className="text-lg font-medium" data-testid={`text-reference-${idx}`}>
-                    • {obj}
+          <div className="backdrop-blur-xl bg-white/5 rounded-3xl border border-white/10 p-8 mb-8 shadow-xl">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-white text-lg font-medium flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-purple-400" />
+                    Frequency
+                  </label>
+                  <div className="px-4 py-1.5 rounded-full bg-purple-500/20 border border-purple-500/30">
+                    <span className="font-mono text-sm text-purple-200">
+                      {formatScientific(frequency)} Hz
+                    </span>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Wave Visualization */}
-          <Card className="border-2" style={{ borderColor: bgStyle.color, backgroundColor: 'transparent' }}>
-            <CardContent className="p-6">
-              <div className="text-sm font-semibold mb-3 opacity-70">WAVE VISUALIZATION</div>
-              <div className="h-24 flex items-center justify-center">
-                <svg width="100%" height="80" viewBox="0 0 400 80">
-                  <path
-                    d={`M 0,40 ${Array.from({ length: 20 }, (_, i) => {
-                      const x = i * 20;
-                      const amp = 20;
-                      const freq = Math.max(0.5, Math.min(5, frequencySliderValue / 20));
-                      const y = 40 + amp * Math.sin((x / 400) * Math.PI * 2 * freq);
-                      return `L ${x},${y}`;
-                    }).join(' ')}`}
-                    stroke={bgStyle.color}
-                    strokeWidth="3"
-                    fill="none"
-                  />
-                </svg>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Wavelength Value */}
-          <Card className="border-2" style={{ borderColor: bgStyle.color, backgroundColor: 'transparent' }}>
-            <CardContent className="p-6">
-              <div className="text-sm font-semibold mb-2 opacity-70">WAVELENGTH</div>
-              <div className="text-4xl font-bold font-mono" data-testid="text-wavelength">
-                {formatScientific(wavelength)} m
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sliders Section */}
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          <Card className="border-2" style={{ borderColor: bgStyle.color, backgroundColor: 'transparent' }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-sm font-semibold opacity-70">FREQUENCY</div>
-                <div className="text-2xl font-bold font-mono" data-testid="text-frequency">
-                  {formatScientific(frequency)} Hz
+                </div>
+                <Slider
+                  value={[frequencySliderValue]}
+                  onValueChange={handleFrequencySliderChange}
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  className="mb-3"
+                  data-testid="slider-frequency"
+                />
+                <div className="flex justify-between text-xs text-purple-300">
+                  <span>Low Energy</span>
+                  <span>High Energy</span>
                 </div>
               </div>
-              <Slider
-                value={[frequencySliderValue]}
-                onValueChange={handleFrequencySliderChange}
-                min={0}
-                max={100}
-                step={0.1}
-                className="w-full"
-                data-testid="slider-frequency"
-              />
-            </CardContent>
-          </Card>
 
-          <Card className="border-2" style={{ borderColor: bgStyle.color, backgroundColor: 'transparent' }}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-sm font-semibold opacity-70">ENERGY</div>
-                <div className="text-2xl font-bold font-mono" data-testid="text-energy">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <label className="text-white text-lg font-medium flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-pink-400" />
+                    Wavelength
+                  </label>
+                  <div className="px-4 py-1.5 rounded-full bg-pink-500/20 border border-pink-500/30">
+                    <span className="font-mono text-sm text-pink-200">
+                      {formatScientific(wavelength)} m
+                    </span>
+                  </div>
+                </div>
+                <Slider
+                  value={[wavelengthSliderValue]}
+                  onValueChange={handleWavelengthSliderChange}
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  className="mb-3"
+                  data-testid="slider-wavelength"
+                />
+                <div className="flex justify-between text-xs text-pink-300">
+                  <span>Short Waves</span>
+                  <span>Long Waves</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="backdrop-blur-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl border border-purple-500/20 p-6">
+              <h3 className="text-purple-200 text-sm uppercase tracking-wider mb-4">Wave Properties</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs text-purple-300 mb-1">Energy</div>
+                  <div className="text-2xl font-mono text-white" data-testid="text-energy">
+                    {formatScientific(energy)} J
+                  </div>
+                </div>
+                <div className="pt-3 border-t border-white/10">
+                  <div className="text-xs text-purple-300 mb-1">Frequency</div>
+                  <div className="text-lg font-mono text-white" data-testid="text-frequency">
+                    {formatScientific(frequency)} Hz
+                  </div>
+                </div>
+                <div className="pt-3 border-t border-white/10">
+                  <div className="text-xs text-purple-300 mb-1">Wavelength</div>
+                  <div className="text-lg font-mono text-white" data-testid="text-wavelength">
+                    {formatScientific(wavelength)} m
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-2xl border border-blue-500/20 p-6">
+              <h3 className="text-blue-200 text-sm uppercase tracking-wider mb-4">Classification</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs text-blue-300 mb-2">Wave Type</div>
+                  <div className={`text-xl font-semibold bg-gradient-to-r ${waveInfo.color} bg-clip-text text-transparent`} data-testid="text-wave-type">
+                    {waveInfo.type}
+                  </div>
+                </div>
+                <div className="pt-3 border-t border-white/10">
+                  <div className="text-xs text-blue-300 mb-2">Energy Level</div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 transition-all duration-300"
+                        style={{ width: `${(frequencySliderValue)}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-xs text-white font-mono">{Math.round(frequencySliderValue)}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={`backdrop-blur-xl rounded-2xl border p-6 ${
+              safetyInfo.level === 'danger' 
+                ? 'bg-gradient-to-br from-red-500/20 to-orange-500/20 border-red-500/30' 
+                : safetyInfo.level === 'caution'
+                ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-yellow-500/30'
+                : 'bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20'
+            }`}>
+              <h3 className={`text-sm uppercase tracking-wider mb-4 ${
+                safetyInfo.level === 'danger' ? 'text-red-200' : 
+                safetyInfo.level === 'caution' ? 'text-yellow-200' : 'text-green-200'
+              }`}>
+                Health & Safety Information
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    safetyInfo.level === 'danger' ? 'bg-red-500/20' :
+                    safetyInfo.level === 'caution' ? 'bg-yellow-500/20' : 'bg-green-500/20'
+                  }`}>
+                    <span className="text-lg">
+                      {safetyInfo.level === 'danger' ? '☢️' : safetyInfo.level === 'caution' ? '⚠️' : '✓'}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-white font-medium mb-1" data-testid="text-safety-type">
+                      {safetyInfo.type}
+                    </div>
+                    <Badge className={`mb-2 ${
+                      safetyInfo.level === 'danger' ? 'bg-red-500/30 text-red-100' :
+                      safetyInfo.level === 'caution' ? 'bg-yellow-500/30 text-yellow-100' : 'bg-green-500/30 text-green-100'
+                    }`}>
+                      {safetyInfo.harmLevel}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <div className={`font-medium mb-1 ${
+                      safetyInfo.level === 'danger' ? 'text-red-100' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-100' : 'text-green-100'
+                    }`}>
+                      Why it's {safetyInfo.level === 'safe' ? 'safe' : 'harmful'}:
+                    </div>
+                    <div className={`${
+                      safetyInfo.level === 'danger' ? 'text-red-200/90' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-200/90' : 'text-green-200/90'
+                    }`} data-testid="text-reason">
+                      {safetyInfo.reason}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/10">
+                    <div className={`font-medium mb-1 ${
+                      safetyInfo.level === 'danger' ? 'text-red-100' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-100' : 'text-green-100'
+                    }`}>
+                      Health Effects:
+                    </div>
+                    <div className={`${
+                      safetyInfo.level === 'danger' ? 'text-red-200/90' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-200/90' : 'text-green-200/90'
+                    }`} data-testid="text-effects">
+                      {safetyInfo.effects}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/10">
+                    <div className={`font-medium mb-1 ${
+                      safetyInfo.level === 'danger' ? 'text-red-100' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-100' : 'text-green-100'
+                    }`}>
+                      How to Protect Yourself:
+                    </div>
+                    <div className={`${
+                      safetyInfo.level === 'danger' ? 'text-red-200/90' :
+                      safetyInfo.level === 'caution' ? 'text-yellow-200/90' : 'text-green-200/90'
+                    }`} data-testid="text-protection">
+                      {safetyInfo.protection}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 backdrop-blur-xl bg-white/5 rounded-2xl border border-white/10 p-6">
+            <h3 className="text-white text-sm uppercase tracking-wider mb-4">Energy-Frequency Relationship</h3>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="text-3xl font-mono text-transparent bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text">
+                  E = hf
+                </div>
+                <div className="text-sm text-purple-300 mt-2">
+                  Where h = {PLANCK_CONSTANT.toExponential(3)} J·s (Planck's constant)
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-purple-300 mb-1">Current Energy</div>
+                <div className="text-xl font-mono text-white">
                   {formatScientific(energy)} J
                 </div>
               </div>
-              <div className="text-sm opacity-70 mt-2">
-                E = hf (h = {PLANCK_CONSTANT.toExponential(2)} J·s)
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Bottom Section - Practical Uses */}
-        <Card className="border-2 mb-6" style={{ borderColor: bgStyle.color, backgroundColor: 'transparent' }}>
-          <CardContent className="p-6">
-            <div className="text-sm font-semibold mb-4 opacity-70">REAL-LIFE APPLICATIONS & USES</div>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-              {waveData.practicalUses.map((use, idx) => (
-                <div key={idx} className="text-base" data-testid={`text-use-${idx}`}>
-                  • {use}
-                </div>
-              ))}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Detailed Subtypes */}
-        <Card className="border-2 mb-6" style={{ borderColor: bgStyle.color, backgroundColor: 'transparent' }}>
-          <CardContent className="p-6">
-            <div className="text-sm font-semibold mb-4 opacity-70">DETAILED SUBTYPES</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {waveData.subtypes.map((subtype, idx) => (
-                <div key={idx} className="p-4 border rounded-lg" style={{ borderColor: bgStyle.color }}>
-                  <div className="font-bold text-lg mb-1">{subtype.name}</div>
-                  <div className="text-sm opacity-70 mb-2">{subtype.wavelengthRange}</div>
-                  <div className="text-sm mb-2">{subtype.description}</div>
-                  <div className="text-xs space-y-1">
-                    {subtype.uses.map((use, useIdx) => (
-                      <div key={useIdx}>• {use}</div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Health & Safety Information */}
-        <Card className="border-2 mb-6" style={{ borderColor: bgStyle.color, backgroundColor: 'transparent' }}>
-          <CardContent className="p-6">
-            <div className="text-sm font-semibold mb-4 opacity-70">HEALTH & SAFETY INFORMATION</div>
-            <div className="space-y-4">
-              <div>
-                <div className="font-semibold mb-2">Health Effects:</div>
-                <div className="opacity-90" data-testid="text-health-effects">{waveData.healthEffects}</div>
-              </div>
-              <div>
-                <div className="font-semibold mb-2">Protection Methods:</div>
-                <div className="opacity-90" data-testid="text-protection">{waveData.protection}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Reset Button */}
-        <div className="flex justify-center">
-          <Button 
-            onClick={handleReset}
-            variant="outline"
-            className="gap-2"
-            style={{ 
-              borderColor: bgStyle.color,
-              color: bgStyle.color,
-              backgroundColor: 'transparent'
-            }}
-            data-testid="button-reset"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Reset to Visible Light
-          </Button>
+          </div>
         </div>
       </div>
     </div>
