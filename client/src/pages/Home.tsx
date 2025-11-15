@@ -181,7 +181,7 @@ export default function Home() {
             </div>
             <div>
               <h1 className="text-xl font-light text-white tracking-wide" data-testid="text-title">Electromagnetic Waves</h1>
-              <p className="text-xs text-purple-300">Interactive Wave Visualizer</p>
+              <p className="text-xs text-purple-300 font-thin">By Prince Zyrus Natividad</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
