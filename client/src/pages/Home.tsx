@@ -173,7 +173,6 @@ export default function Home() {
       <div className="absolute inset-0 opacity-30">
         <ParticleField />
       </div>
-
       <div className="relative z-10">
         <nav className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
@@ -181,9 +180,7 @@ export default function Home() {
               <Activity className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-light text-white tracking-wide" data-testid="text-title">
-                EM Spectrum Lab
-              </h1>
+              <h1 className="text-xl font-light text-white tracking-wide" data-testid="text-title">Electromagnetic Waves</h1>
               <p className="text-xs text-purple-300">Interactive Wave Visualizer</p>
             </div>
           </div>
