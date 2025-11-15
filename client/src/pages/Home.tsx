@@ -7,6 +7,7 @@ import WaveCanvas from '@/components/WaveCanvas';
 import ParticleField from '@/components/ParticleField';
 import WaveComparison from '@/components/WaveComparison';
 import WaveClassificationCard from '@/components/WaveClassificationCard';
+import { computeNormalizedAmplitude, amplitudeToPixels } from '@/lib/amplitudeUtils';
 
 const SPEED_OF_LIGHT = 3e8;
 const PLANCK_CONSTANT = 6.626e-34;
@@ -47,6 +48,11 @@ export default function Home() {
   };
 
   const energy = PLANCK_CONSTANT * frequency;
+
+  // Compute amplitude dynamically based on wavelength
+  const CANVAS_HEIGHT = 400; // Approximate canvas height
+  const normalizedAmplitude = computeNormalizedAmplitude(wavelength);
+  const amplitude = amplitudeToPixels(normalizedAmplitude, CANVAS_HEIGHT, 0.15, 0.45);
 
   const frequencyLog = Math.log10(frequency);
   const frequencySliderValue = ((frequencyLog - Math.log10(MIN_FREQUENCY)) / (Math.log10(MAX_FREQUENCY) - Math.log10(MIN_FREQUENCY))) * 100;
@@ -219,8 +225,8 @@ export default function Home() {
               </div>
               <div className="h-[60vh] min-h-[400px] relative">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-500/5 to-transparent"></div>
-                <WaveCanvas frequency={frequency} wavelength={wavelength} />
-                <WaveComparison wavelength={wavelength} amplitude={120} />
+                <WaveCanvas frequency={frequency} wavelength={wavelength} amplitude={amplitude} />
+                <WaveComparison wavelength={wavelength} amplitude={amplitude} />
                 <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/50 to-transparent"></div>
               </div>
             </div>

@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getWaveInfo } from '@/lib/waveData';
+import { getComparisonImage } from '@/lib/comparisonAssets';
+import { lerp } from '@/lib/amplitudeUtils';
 
 interface WaveComparisonProps {
   wavelength: number;
-  amplitude: number;
+  amplitude: number; // Amplitude in pixels
 }
 
 export default function WaveComparison({ wavelength, amplitude }: WaveComparisonProps) {
   const [prevComparison, setPrevComparison] = useState('');
+  const currentHeightRef = useRef<number>(amplitude * 2);
   const waveInfo = getWaveInfo(wavelength);
   
   useEffect(() => {
@@ -17,103 +20,73 @@ export default function WaveComparison({ wavelength, amplitude }: WaveComparison
     }
   }, [waveInfo?.subcategory.comparison, prevComparison]);
 
+  // Smoothly interpolate image height
+  useEffect(() => {
+    let frameId: number;
+    const animate = () => {
+      currentHeightRef.current = lerp(currentHeightRef.current, amplitude * 2, 0.1);
+      frameId = requestAnimationFrame(animate);
+    };
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, [amplitude]);
+
   if (!waveInfo) return null;
 
   const { subcategory } = waveInfo;
-  const comparisonSize = amplitude * 2;
-
-  const getComparisonIcon = (comparison: string): string => {
-    const lower = comparison.toLowerCase();
-    
-    if (lower.includes('mount everest')) return '🏔️';
-    if (lower.includes('skyscraper') || lower.includes('building')) return '🏢';
-    if (lower.includes('human')) return '🧍';
-    if (lower.includes('book')) return '📖';
-    if (lower.includes('laptop')) return '💻';
-    if (lower.includes('finger')) return '👆';
-    if (lower.includes('rice')) return '🍚';
-    if (lower.includes('ruler')) return '📏';
-    if (lower.includes('mug') || lower.includes('coffee')) return '☕';
-    if (lower.includes('golf')) return '⛳';
-    if (lower.includes('matchbox')) return '🔥';
-    if (lower.includes('coin')) return '🪙';
-    if (lower.includes('paperclip')) return '📎';
-    if (lower.includes('pea')) return '🫛';
-    if (lower.includes('blood cell')) return '🔴';
-    if (lower.includes('bacterium') || lower.includes('bacteria')) return '🦠';
-    if (lower.includes('dust')) return '✨';
-    if (lower.includes('virus')) return '🦠';
-    if (lower.includes('protein') || lower.includes('molecule')) return '🧬';
-    if (lower.includes('dna')) return '🧬';
-    if (lower.includes('chlorophyll')) return '🌿';
-    if (lower.includes('atom')) return '⚛️';
-    if (lower.includes('nucleus')) return '☢️';
-    
-    return '📏';
-  };
-
-  const icon = getComparisonIcon(subcategory.comparison);
+  const comparisonImage = getComparisonImage(subcategory.comparison);
+  const imageHeight = Math.min(currentHeightRef.current, 300); // Cap at 300px max
 
   return (
     <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none z-10">
       <AnimatePresence mode="wait">
         <motion.div
           key={subcategory.comparison}
-          initial={{ opacity: 0, scale: 0.5, x: 50 }}
-          animate={{ opacity: 0.4, scale: 1, x: 0 }}
-          exit={{ opacity: 0, scale: 0.5, x: -50 }}
+          initial={{ opacity: 0, scale: 0.8, x: 50 }}
+          animate={{ opacity: 0.6, scale: 1, x: 0 }}
+          exit={{ opacity: 0, scale: 0.8, x: -50 }}
           transition={{
             type: "spring",
             stiffness: 200,
             damping: 20,
             duration: 0.5
           }}
-          className="flex flex-col items-center gap-2"
+          className="flex flex-col items-center gap-3"
         >
           <motion.div
-            animate={{
-              y: [0, -10, 0],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="relative"
+            className="relative flex items-center justify-center"
             style={{
-              fontSize: `${Math.min(comparisonSize, 120)}px`,
-              filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.3))'
+              maxHeight: `${imageHeight}px`,
+              filter: 'drop-shadow(0 0 16px rgba(139, 92, 246, 0.5))'
             }}
           >
-            {icon}
+            <img
+              src={comparisonImage}
+              alt={subcategory.comparison}
+              className="object-contain"
+              style={{
+                maxHeight: `${imageHeight}px`,
+                width: 'auto',
+                opacity: 0.6,
+                mixBlendMode: 'screen',
+                filter: 'brightness(1.2) contrast(1.1)'
+              }}
+            />
           </motion.div>
           
           <motion.div
             initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 0.6, y: 0 }}
+            animate={{ opacity: 0.8, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-center px-3 py-1 bg-background/80 backdrop-blur-sm rounded-md border border-border/50"
+            className="text-center px-4 py-2 bg-background/90 backdrop-blur-sm rounded-md border border-border/50 shadow-lg"
           >
-            <div className="text-xs font-medium whitespace-nowrap">
+            <div className="text-xs font-medium whitespace-nowrap text-foreground">
               {subcategory.comparison}
             </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              ~{(amplitude * 2).toFixed(0)}px
+            </div>
           </motion.div>
-
-          <motion.div
-            className="absolute inset-0 rounded-full"
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0, 0.3],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            style={{
-              background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)',
-            }}
-          />
         </motion.div>
       </AnimatePresence>
     </div>
